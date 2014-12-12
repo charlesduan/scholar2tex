@@ -1,0 +1,84 @@
+% Copyright 2014 Charles Duan.
+%
+% This file is part of scholar2tex.
+%
+% scholar2tex is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+%
+% scholar2tex is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with scholar2tex.  If not, see <http://www.gnu.org/licenses/>.
+
+\ProvidesFile{casemacs}
+
+%\RequirePackage{linespace}
+\RequirePackage{geometry}
+
+\geometry{paperheight=8.5in,paperwidth=5.5in,margin=.5in,
+outer=.6in,
+marginparwidth=.5in,
+marginparsep=8pt,
+headsep=12pt,
+heightrounded,
+includehead}
+
+
+\def\caption#1{\gdef\@caption{#1}}
+\def\shortcaption#1{\gdef\@shortcaption{#1}}
+\def\citation#1{\gdef\@citation{#1}\@parsecitation#1\stop}
+\def\docket#1{\gdef\@docket{#1}}
+\def\court#1{\gdef\@court{#1}}
+
+\def\@parsecitation#1 (#2\stop{%
+    \def\@reporter{#1}%
+    \def\@parenthetical{(#2}
+}
+
+\def\section#1{%
+    %\linespace
+    \vskip\baselineskip
+    \begin{centering}\bfseries#1\par\end{centering}%
+    \nobreak\vskip\baselineskip
+}
+
+
+\def\maketitle{%
+    \thispagestyle{empty}%
+    \begin{center}
+        \bfseries
+        \@citation\\[12pt]
+        \@caption\\[12pt]
+        \@docket\\[12pt]
+        \@court\\[12pt]
+    \end{center}
+}
+
+\def\pagenum#1{%
+    \leavevmode
+    \marginpar[%
+        \hfill\bfseries\footnotesize #1%
+    ]{%
+        \bfseries\footnotesize #1%
+    }%
+    \mark{#1}%
+    \lower .5ex\hb@xt@\z@{%
+        \hss$\perp$\hss
+    }%
+}
+
+\def\ps@case{%
+  \let\@oddfoot\@empty\let\@evenfoot\@empty
+  \def\@evenhead{\topmark\hfil\emph{\@shortcaption}}%
+  \def\@oddhead{\@citation\hfil\hfil\botmark}%
+}
+
+
+\pagestyle{case}
+\frenchspacing
+\sloppy

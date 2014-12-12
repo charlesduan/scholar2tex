@@ -1,0 +1,27 @@
+scholar2tex
+=====
+
+Converts HTML for cases from Google Scholar into LaTeX. The resulting file is
+formatted based on casemacs.sty, which will generate half-letter-size sheets
+that can be compiled into a book.
+
+CONTENTS
+=====
+
+scholar2tex.rb - script that converts an HTML page of a Google Scholar case into
+a LaTeX document.
+
+casemacs.sty - Macros and formatting commands for the generated document.
+
+alice.html, bilski.html, etc. - sample cases that have been downloaded.
+
+USAGE
+=====
+
+    ./scholar2tex.rb [URL or FILE] > [DOCUMENT].tex
+    [xe,pdf,etc.]latex [DOCUMENT].tex
+
+Or you can directly pipeline:
+
+    ./scholar2tex.rb [URL or FILE] | [xe,per,etc.]latex
+
