@@ -106,13 +106,16 @@ class CaseParser
   end
 
   def process_entities(text)
-    text.gsub(/[_&$]/, {
+    text.gsub(/[_&$%]/, {
       '_' => "\\_",
       "&" => "\\&",
       "$" => "\\$",
+      "%" => "\\%",
     }).gsub("\"") { |q|
       @in_quote = !@in_quote; @in_quote ? "``" : "\\null''"
-    }.gsub("§", "\\textsection{}").gsub("", "{}---{}")
+    }.gsub("§", "\\textsection{}").gsub("", "{}---{}").gsub(
+      /(https?:\/\/[^ ]*)/, "\\url{\\1}"
+    )
   end
 
   def process_elt_p(elt)

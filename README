@@ -23,5 +23,5 @@ USAGE
 
 Or you can directly pipeline:
 
-    ./scholar2tex.rb [URL or FILE] | [xe,per,etc.]latex
+    ./scholar2tex.rb [URL or FILE] | [xe,pdf,etc.]latex
 
