@@ -198,7 +198,9 @@ class CaseParser
     if caption =~ /\s*v\.\s*/m
       topside, bottomside = $`, $'
       [ topside, bottomside ].map { |x|
-        select_words(x.strip.sub(/,.*/, "").split(/\s+/))
+        x = x.strip.sub(/,.*/, "")
+        x = x.sub(/et al\.?$/i, "")
+        select_words(x.split(/\s+/))
       }.join(" v.~")
     else
       warn("Cannot parse caption: #{caption}")
@@ -221,7 +223,11 @@ class CaseParser
   end
 
   def decapitalize_words(words)
-    return ($&) if (text =~ /#{words}/i)
+    if words =~ /\.$/
+      nodot_words = words.sub(/\.$/, "")
+      return $1 if (text =~ /(#{Regexp::escape(nodot_words)})[^.]/i)
+    end
+    return ($&) if (text =~ /#{Regexp::escape(words)}/i)
     return words.split(/\s+/).map { |x| x.capitalize }.join(" ")
   end
 
