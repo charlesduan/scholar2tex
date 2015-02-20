@@ -20,9 +20,9 @@
 %\RequirePackage{linespace}
 \RequirePackage{geometry}
 \RequirePackage{url}
+\RequirePackage{tameflts}
 \RequirePackage{fontspec}
-
-\setmainfont{Crimson}
+\setmainfont[Ligatures=TeX]{Crimson}
 
 \geometry{paperheight=8.5in,paperwidth=5.5in,margin=.5in,
 outer=.6in,
@@ -65,21 +65,23 @@ includehead}
 
 \def\pagenum#1{%
     \leavevmode
-    \marginpar[%
-        \hfill\bfseries\footnotesize #1%
-    ]{%
-        \bfseries\footnotesize #1%
-    }%
+    \marginpar
+        [\hfill\bfseries\footnotesize #1]%
+        {\bfseries\footnotesize #1}%
     \mark{#1}%
     \lower .5ex\hb@xt@\z@{%
         \hss$\perp$\hss
     }%
 }
 
+\let\thelastmark\relax
 \def\ps@case{%
   \let\@oddfoot\@empty\let\@evenfoot\@empty
-  \def\@evenhead{\topmark\hfil\emph{\@shortcaption}}%
-  \def\@oddhead{\@citation\hfil\hfil\botmark}%
+  \def\@evenhead{%
+    \ifx\thelastmark\relax\topmark\else\thelastmark\fi
+    \hfil\emph{\@shortcaption}%
+  }%
+  \def\@oddhead{\@citation\hfil\hfil\botmark\xdef\thelastmark{\botmark}}%
 }
 
 
