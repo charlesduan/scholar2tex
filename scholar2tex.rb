@@ -240,7 +240,7 @@ open(ARGV[0]) do |f|
   doc = Nokogiri::HTML(f)
   cp = CaseParser.new(doc)
 
-  puts "\\documentclass[twoside]{article}"
+  puts "\\documentclass[twoside,11pt]{article}"
   puts "\\usepackage{casemacs}"
   puts ""
   puts "\\citation{#{cp.citation}}"
