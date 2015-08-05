@@ -29,6 +29,7 @@ outer=.6in,
 marginparwidth=.5in,
 marginparsep=8pt,
 headsep=12pt,
+headheight=10pt,
 heightrounded,
 includehead}
 
@@ -87,4 +88,23 @@ includehead}
 
 \pagestyle{case}
 \frenchspacing
+\parskip=\z@
+\def\set@fontsize#1#2#3{%
+    \@defaultunits\@tempdimb#2pt\relax\@nnil
+    \edef\f@size{\strip@pt\@tempdimb}%
+    \@defaultunits\@tempskipa#3pt\relax\@nnil
+    \advance\@tempskipa \z@ \@plus .5pt\relax
+    \edef\f@baselineskip{\the\@tempskipa}%
+    \edef\f@linespread{#1}%
+    \let\baselinestretch\f@linespread
+      \def\size@update{%
+        \baselineskip\f@baselineskip\relax
+        \baselineskip\f@linespread\baselineskip
+        \normalbaselineskip\baselineskip
+        \setbox\strutbox\hbox{%
+          \vrule\@height.7\baselineskip
+                \@depth.3\baselineskip
+                \@width\z@}%
+        \let\size@update\relax}%
+  }
 \sloppy

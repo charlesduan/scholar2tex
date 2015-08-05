@@ -213,7 +213,10 @@ class CaseParser
     words.each do |word|
       next if (word =~ /^.\.$/ or word =~ /[a-z]/)
       if found
-        return decapitalize_words("#{found} #{word}")
+        found += " #{word}"
+        unless SHORT_WORDS.include?(word.downcase)
+          return decapitalize_words(found)
+        end
       else
         found = word
       end
@@ -221,6 +224,8 @@ class CaseParser
     return decapitalize_words(found) if found
     return words.join(" ")
   end
+
+  SHORT_WORDS = %w(of in a the for to)
 
   def decapitalize_words(words)
     if words =~ /\.$/
