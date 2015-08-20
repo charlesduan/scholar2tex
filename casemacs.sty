@@ -19,13 +19,16 @@
 
 %\RequirePackage{linespace}
 \RequirePackage{geometry}
-\RequirePackage{url}
+\RequirePackage[hyphens]{url}
 \RequirePackage{tameflts}
 \RequirePackage{fontspec}
+\RequirePackage{xspace}
 \setmainfont[Ligatures=TeX]{Crimson}
+\urlstyle{same}
 
 \geometry{paperheight=8.5in,paperwidth=5.5in,margin=.5in,
 outer=.6in,
+top=.4in,
 marginparwidth=.5in,
 marginparsep=8pt,
 headsep=12pt,
@@ -47,9 +50,17 @@ includehead}
 
 \def\section#1{%
     %\linespace
-    \vskip\baselineskip
+    \vskip.5\baselineskip
     \begin{centering}\bfseries#1\par\end{centering}%
-    \nobreak\vskip\baselineskip
+    \nobreak\vskip.5\baselineskip
+}
+
+
+\def\subsection#1{%
+    %\linespace
+    \vskip.5\baselineskip
+    \begin{centering}\itshape#1\par\end{centering}%
+    \nobreak\vskip.5\baselineskip
 }
 
 
@@ -85,6 +96,7 @@ includehead}
   \def\@oddhead{\@citation\hfil\hfil\botmark\xdef\thelastmark{\botmark}}%
 }
 
+\def\amendmentpar{\noindent\hb@xt@\parindent{\vrule\@height1ex\@width1ex\hss}}
 
 \pagestyle{case}
 \frenchspacing
