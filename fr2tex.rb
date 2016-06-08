@@ -199,9 +199,9 @@ class CaseParser
 
   def process_elt_e(elt)
     if elt['T'] == '03'
-      " \\emph{#{process_text(elt)}}\\xspace "
+      "\\emph{#{process_text(elt)}}"
     elsif elt['T'] == '04'
-      " \\textbf{#{process_text(elt)}}\\xspace "
+      "\\textbf{#{process_text(elt)}}"
     else
       warn("Unknown E type #{elt['T']}")
       process_text(elt)
