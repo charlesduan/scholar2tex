@@ -32,6 +32,7 @@ class BoundVolume
   def download_volume
     url = "https://www.supremecourt.gov/opinions/boundvolumes/#{@vol}bv.pdf"
     @file = Tempfile.new([ "vol", ".pdf" ])
+    puts "Downloading #{url}"
     open(url) do |f|
       loop do
         str = f.read(4096)
