@@ -51,6 +51,7 @@ class BoundVolume
       io.each_line do |line|
         case line
         when /PAGES OPINPGT/  then next
+        when /PAGES PGT: OPIN/  then next
         when /^\s*$/          then next
         when /^(\d+)\s+(\S.*)$/
           return [ $2, $1.to_i ]
