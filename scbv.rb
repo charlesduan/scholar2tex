@@ -148,8 +148,8 @@ puts ""
 bv.make_pdf("texput.pdf")
 
 if page.even?
-  system('booklet.rb', '-b', '2.2,2.2,6.4,9.4' '-e', 'texput.pdf')
+  system('booklet.rb', '-b', '2.2,2.2,6.4,9.4', '-e', 'texput.pdf')
 else
-  system('booklet.rb', '-b', '2.2,2.2,6.4,9.4' 'texput.pdf')
+  system('booklet.rb', '-b', '2.2,2.2,6.4,9.4', 'texput.pdf')
 end
 
