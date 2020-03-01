@@ -22,6 +22,9 @@ def find_pages(vol, page)
   return [ first_page, last_page ]
 end
 
+class NoHeadError < StandardError
+end
+
 class BoundVolume
 
   def initialize(vol, page)
@@ -30,6 +33,10 @@ class BoundVolume
   end
 
   def download_volume
+    if File.exist?("#{@vol}bv.pdf")
+      @file = File.new("#{@vol}bv.pdf", 'r')
+      return @file
+    end
     url = "https://www.supremecourt.gov/opinions/boundvolumes/#{@vol}bv.pdf"
     @file = Tempfile.new([ "vol", ".pdf" ])
     puts "Downloading #{url}"
@@ -63,10 +70,11 @@ class BoundVolume
         when /ORDERS FOR/
           return [ "", 1001 ]
         else
-          raise "Could not find header line on page #{page}: #{line}"
+          raise NoHeadError, "Could not find header on page #{page}: #{line}"
         end
       end
     end
+    raise NoHeadError, "Reached EOF without finding header line"
   end
 
   def offset
@@ -92,14 +100,24 @@ class BoundVolume
   def find_last_page
     cur_page = @page + 2
     increment = 64
+
+    # Associates page numbers with whether they have been tested to be beyond
+    # the desired opinion.
     too_far = {}
+
     loop do
       cur_page += increment
-      yield(cur_page)
-      exp_head = cur_page.even? ? @even_head : @odd_head
-
-      if too_far[cur_page].nil?
-        too_far[cur_page] = (parse_page(cur_page)[0] != exp_head)
+      if too_far[cur_page].nil? # If the page has not yet been tested
+        begin
+          yield(cur_page)
+          too_far[cur_page] = test_page(cur_page)
+        rescue NoHeadError
+          # In some cases the Court will insert appendices or other material
+          # that don't follow the normal headers. In such cases, skip to the
+          # next page and test that one instead.
+          cur_page += 1
+          retry
+        end
       end
 
       if too_far[cur_page]
@@ -113,6 +131,14 @@ class BoundVolume
       end
 
     end
+  end
+
+  # Tests if a page is outside the desired opinion, by seeing if its header
+  # matches the header for the desired opinion.
+  def test_page(cur_page)
+    exp_head = cur_page.even? ? @even_head : @odd_head
+    pp = parse_page(cur_page)
+    return (pp[0] != exp_head)
   end
 
   def make_pdf(outfile)
