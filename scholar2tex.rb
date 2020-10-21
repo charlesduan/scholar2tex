@@ -191,8 +191,8 @@ class CaseParser
   end
 
   def caption
-    res = @opinion.at_css('h3#gsl_case_name')
-    res.content.gsub("\r", "")
+    res = process_text(@opinion.at_css('h3#gsl_case_name'))
+    res.gsub("\r", "")
   end
 
   def shortcaption
@@ -226,7 +226,7 @@ class CaseParser
     return words.join(" ")
   end
 
-  SHORT_WORDS = %w(of in a the for to)
+  SHORT_WORDS = %w(of in a the for to \&)
 
   def decapitalize_words(words)
     if words =~ /\.$/
@@ -239,11 +239,11 @@ class CaseParser
 
 
   def docket
-    @opinion.css('center')[2].content
+    process_text(@opinion.css('center')[2]).strip
   end
 
   def court
-    @opinion.css('center')[3].content
+    process_text(@opinion.css('center')[3]).strip
   end
 
 end

@@ -79,8 +79,8 @@ class BoundVolume
 
   def offset
     return @offset if @offset
-    text, page = parse_raw_page(100)
-    @offset = 100 - page
+    text, page = parse_raw_page(300)
+    @offset = 300 - page
     return @offset
   end
 
