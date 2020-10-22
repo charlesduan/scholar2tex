@@ -248,6 +248,10 @@ class CaseParser
 
 end
 
+if ARGV[0] == '-p'
+  ARGV[0] = `pbpaste`
+end
+
 open(ARGV[0]) do |f|
   doc = Nokogiri::HTML(f)
   cp = CaseParser.new(doc)

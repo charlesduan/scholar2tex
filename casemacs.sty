@@ -51,7 +51,7 @@ includehead}
 \def\section#1{%
     %\linespace
     \vskip.5\baselineskip
-    \begin{centering}\bfseries#1\par\end{centering}%
+    \begin{centering}\bfseries #1\par\end{centering}%
     \nobreak\vskip.5\baselineskip
 }
 
@@ -59,7 +59,15 @@ includehead}
 \def\subsection#1{%
     %\linespace
     \vskip.5\baselineskip
-    \begin{centering}\itshape#1\par\end{centering}%
+    \begin{centering}\itshape\bfseries #1\par\end{centering}%
+    \nobreak\vskip.5\baselineskip
+}
+
+
+\def\subsubsection#1{%
+    %\linespace
+    \vskip.5\baselineskip
+    \begin{centering}\itshape #1\par\end{centering}%
     \nobreak\vskip.5\baselineskip
 }
 
@@ -120,3 +128,20 @@ includehead}
         \let\size@update\relax}%
   }
 \sloppy
+\def\indentpar#1#2#3{%
+    \@hangfrom{\hskip #1em\relax#2. }#3\par
+}
+%
+% Inserts a footnote that already has its number.
+\long\def\insfootnote#1{%
+    \insert\footins{%
+        \reset@font\footnotesize
+        \interlinepenalty\interfootnotelinepenalty
+        \splittopskip\footnotesep
+        \splitmaxdepth \dp\strutbox \floatingpenalty \@MM
+        \hsize\columnwidth \@parboxrestore
+        \color@begingroup
+            \rule\z@\footnotesep\ignorespaces#1\@finalstrut\strutbox
+        \color@endgroup
+    }%
+}

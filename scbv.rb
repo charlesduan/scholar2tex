@@ -3,6 +3,8 @@
 require 'nokogiri'
 require 'open-uri'
 require 'tempfile'
+require 'optparse'
+require 'ostruct'
 
 def justia_url(vol)
   "https://supreme.justia.com/justia-ussc-sitemap.#{vol}.xml"
@@ -24,12 +26,20 @@ end
 
 class BoundVolume
 
-  def initialize(vol, page)
+  def initialize(vol, page, file = nil)
     @vol = vol
     @page = page
+    @file = file
   end
 
   def download_volume
+    if @file.is_a?(String)
+      @file = open(@file)
+      return @file
+    elsif @file
+      return @file
+    end
+
     url = "https://www.supremecourt.gov/opinions/boundvolumes/#{@vol}bv.pdf"
     @file = Tempfile.new([ "vol", ".pdf" ])
     puts "Downloading #{url}"
@@ -128,12 +138,30 @@ end
 # MAIN PROGRAM
 #
 
+@options = OpenStruct.new(
+  :bv_file => nil,
+)
+
+opt_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: #{File.basename $0} [options] ## U.S. ##"
+  opts.summary_width = 25
+  opts.separator('')
+  opts.separator("Options:")
+
+  opts.on('-f', '--file FILE', 'PDF file of bound volume') do |file|
+    @options.bv_file = file
+  end
+
+end
+
+opt_parser.parse!(ARGV)
+
 volume, page = ARGV.first.to_i, ARGV.last.to_i
 
 raise "Invalid volume" unless volume >= 502
 raise "Invalid page" unless page > 0
 
-bv = BoundVolume.new(volume, page)
+bv = BoundVolume.new(volume, page, @options.bv_file)
 bv.download_volume
 puts "Downloaded file."
 
