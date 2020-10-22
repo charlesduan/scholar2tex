@@ -1,2 +1,9 @@
-.swp .aux .toc .toa .lot .lof .log
-texput.pdf
+*.swp
+*.aux
+*.toc
+*.toa
+*.lot
+*.lof
+*.log
+*.pdf
+texput.*
