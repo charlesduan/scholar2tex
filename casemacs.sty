@@ -23,6 +23,7 @@
 \RequirePackage{tameflts}
 \RequirePackage{fontspec}
 \RequirePackage{xspace}
+\RequirePackage{strings}
 \setmainfont[Ligatures=TeX]{Crimson}
 \urlstyle{same}
 
@@ -39,11 +40,15 @@ includehead}
 
 \def\caption#1{\gdef\@caption{#1}}
 \def\shortcaption#1{\gdef\@shortcaption{#1}}
-\def\citation#1{\gdef\@citation{#1}\@parsecitation#1\stop}
+\make@find@in{ (} %)
+\def\citation#1{%
+    \gdef\@citation{#1}%
+    \find@in{ (}{#1}{\@parsecitation}%
+}
 \def\docket#1{\gdef\@docket{#1}}
 \def\court#1{\gdef\@court{#1}}
 
-\def\@parsecitation#1 (#2\stop{%
+\def\@parsecitation#1#2{%
     \def\@reporter{#1}%
     \def\@parenthetical{(#2}
 }
