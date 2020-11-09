@@ -119,9 +119,19 @@ class CaseParser
     )
   end
 
+  JUDGE_RE = /Justice|Judge|[^abd-z]+, (?:[CJ.]*J\.|(?:\w+ )?Judges?)/
+  OPINING_RE = /concurring|dissenting|delivered (?:the|an) opinion/
+
   def process_elt_p(elt)
     @in_quote = false
-    process_text(elt) + "\n\n"
+    text = process_text(elt)
+
+    # Identifies concurrence and dissent markers
+    if text =~ /^#{JUDGE_RE}.*#{OPINING_RE}/
+      text = "\\vskip\\baselineskip\n\n\\textbf{#{text}}"
+    end
+
+    return text + "\n\n"
   end
 
   def process_elt_i(elt)
@@ -209,24 +219,46 @@ class CaseParser
     end
   end
 
+  #
+  # Chooses words from a party name to be a short caption. The basic rule is
+  # that (1) we assume that only fully-capitalized words in a party name matter
+  # (words with lowercase letters are usually people's first names or
+  # conjunctions between parties), and (2) the first two words of a corporate
+  # party's name are sufficient, so long as the second word is permissible as an
+  # ending of a name (so we don't get "Securities and" as a party name).
+  #
   def select_words(words)
     found = nil
     words.each do |word|
+
+      # Skip single-letter abbreviations and words that contain lowercase
+      # letters
       next if (word =~ /^.\.$/ or word =~ /[a-z]/)
+
       if found
+
+        # If we've already found the first word, then add this word to the short
+        # caption string. If the present word is a short word, then we cannot
+        # end the caption with this word so we continue. Otherwise, we terminate
+        # the word-finding loop.
         found += " #{word}"
-        unless SHORT_WORDS.include?(word.downcase)
-          return decapitalize_words(found)
-        end
+        break unless SHORT_WORDS.include?(word.downcase)
       else
+
+        # Always include the first all-caps word in the short caption.
         found = word
       end
     end
+
+    # Adjust capitalization and return the found words.
     return decapitalize_words(found) if found
-    return words.join(" ")
+
+    # In case of failure (no words found), return the whole string with
+    # capitalization adjusted.
+    return decapitalize_words(words.join(" "))
   end
 
-  SHORT_WORDS = %w(of in a the for to \&)
+  SHORT_WORDS = %w(of in a the for to and \&)
 
   def decapitalize_words(words)
     if words =~ /\.$/
