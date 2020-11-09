@@ -25,7 +25,7 @@ class CaseParser
 
   def initialize(doc)
     @doc = doc
-    @opinion = doc.at_css('#gs_opinion')
+    @opinion = doc.at_css('#co_document_0')
     parse_footnotes
     parse_opinion
   end
@@ -34,29 +34,15 @@ class CaseParser
 
   def parse_footnotes
     @footnotes = {}
-    last_footnote = ""
-    elt = @opinion.css('small').last
-    return unless elt
-    elt = elt.next_element
-    elt.previous_element.unlink
-    while (elt)
-      first_elt = elt.elements.first
-      if first_elt && first_elt.name == 'a' && first_elt['href']
-        if first_elt['href'] =~ /^#r\[(.+)\]$/
-          fnref = $1
-          first_elt.unlink
-          last_footnote = @footnotes[fnref] = ""
-        end
-      end
-      last_footnote << process_elt(elt) if elt['id'] != 'gs_dont_print'
-      if elt.next_element.nil?
-        elt.unlink
-        elt = nil
-      else
-        elt = elt.next_element
-        elt.previous_element.unlink
-      end
+    @opinion.css('#co_footnoteSection div').each do |note_div|
+      num_div = note_div.at_css('#co_footnoteNumber span a')
+      number = num_div.content
+      num_ref = num_div['href']
+
+      text = process_elt(note_div.att_css('#co_footnoteBody'))
+      @footnotes[num_ref] = { :num => number, :text => text }
     end
+
   end
 
   def text
@@ -106,12 +92,11 @@ class CaseParser
   end
 
   def process_entities(text)
-    text.gsub(/[_&$%#]/, {
+    text.gsub(/[_&$%]/, {
       '_' => "\\_",
       "&" => "\\&",
       "$" => "\\$",
       "%" => "\\%",
-      "#" => "\\#",
     }).gsub("\"") { |q|
       @in_quote = !@in_quote; @in_quote ? "``" : "\\null''"
     }.gsub("§", "\\textsection{}").gsub("", "{}---{}").gsub(
@@ -119,19 +104,9 @@ class CaseParser
     )
   end
 
-  JUDGE_RE = /Justice|Judge|[^abd-z]+, (?:[CJ.]*J\.|(?:\w+ )?Judges?)/
-  OPINING_RE = /concurring|dissenting|delivered (?:the|an) opinion/
-
   def process_elt_p(elt)
     @in_quote = false
-    text = process_text(elt)
-
-    # Identifies concurrence and dissent markers
-    if text =~ /^#{JUDGE_RE}.*#{OPINING_RE}/
-      text = "\\vskip\\baselineskip\n\n\\textbf{#{text}}"
-    end
-
-    return text + "\n\n"
+    process_text(elt) + "\n\n"
   end
 
   def process_elt_i(elt)
@@ -201,8 +176,8 @@ class CaseParser
   end
 
   def caption
-    res = process_text(@opinion.at_css('h3#gsl_case_name'))
-    res.gsub("\r", "")
+    res = @opinion.at_css('h3#gsl_case_name')
+    res.content.gsub("\r", "")
   end
 
   def shortcaption
@@ -219,46 +194,24 @@ class CaseParser
     end
   end
 
-  #
-  # Chooses words from a party name to be a short caption. The basic rule is
-  # that (1) we assume that only fully-capitalized words in a party name matter
-  # (words with lowercase letters are usually people's first names or
-  # conjunctions between parties), and (2) the first two words of a corporate
-  # party's name are sufficient, so long as the second word is permissible as an
-  # ending of a name (so we don't get "Securities and" as a party name).
-  #
   def select_words(words)
     found = nil
     words.each do |word|
-
-      # Skip single-letter abbreviations and words that contain lowercase
-      # letters
       next if (word =~ /^.\.$/ or word =~ /[a-z]/)
-
       if found
-
-        # If we've already found the first word, then add this word to the short
-        # caption string. If the present word is a short word, then we cannot
-        # end the caption with this word so we continue. Otherwise, we terminate
-        # the word-finding loop.
         found += " #{word}"
-        break unless SHORT_WORDS.include?(word.downcase)
+        unless SHORT_WORDS.include?(word.downcase)
+          return decapitalize_words(found)
+        end
       else
-
-        # Always include the first all-caps word in the short caption.
         found = word
       end
     end
-
-    # Adjust capitalization and return the found words.
     return decapitalize_words(found) if found
-
-    # In case of failure (no words found), return the whole string with
-    # capitalization adjusted.
-    return decapitalize_words(words.join(" "))
+    return words.join(" ")
   end
 
-  SHORT_WORDS = %w(of in a the for to and \&)
+  SHORT_WORDS = %w(of in a the for to)
 
   def decapitalize_words(words)
     if words =~ /\.$/
@@ -271,17 +224,13 @@ class CaseParser
 
 
   def docket
-    process_text(@opinion.css('center')[2]).strip
+    @opinion.css('center')[2].content
   end
 
   def court
-    process_text(@opinion.css('center')[3]).strip
+    @opinion.css('center')[3].content
   end
 
-end
-
-if ARGV[0] == '-p'
-  ARGV[0] = `pbpaste`
 end
 
 open(ARGV[0]) do |f|

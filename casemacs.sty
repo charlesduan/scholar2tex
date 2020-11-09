@@ -24,6 +24,7 @@
 \RequirePackage{fontspec}
 \RequirePackage{xspace}
 \setmainfont[Ligatures=TeX, BoldFont={* Bold}]{Crimson}
+\RequirePackage{strings}
 \urlstyle{same}
 
 \geometry{paperheight=8.5in,paperwidth=5.5in,margin=.5in,
@@ -39,11 +40,15 @@ includehead}
 
 \def\caption#1{\gdef\@caption{#1}}
 \def\shortcaption#1{\gdef\@shortcaption{#1}}
-\def\citation#1{\gdef\@citation{#1}\@parsecitation#1\stop}
+\make@find@in{ (} %)
+\def\citation#1{%
+    \gdef\@citation{#1}%
+    \find@in{ (}{#1}{\@parsecitation}{}%
+}
 \def\docket#1{\gdef\@docket{#1}}
 \def\court#1{\gdef\@court{#1}}
 
-\def\@parsecitation#1 (#2\stop{%
+\def\@parsecitation#1#2{%
     \def\@reporter{#1}%
     \def\@parenthetical{(#2}
 }
@@ -51,7 +56,7 @@ includehead}
 \def\section#1{%
     %\linespace
     \vskip.5\baselineskip
-    \begin{centering}\bfseries#1\par\end{centering}%
+    \begin{centering}\bfseries #1\par\end{centering}%
     \nobreak\vskip.5\baselineskip
 }
 
@@ -59,7 +64,15 @@ includehead}
 \def\subsection#1{%
     %\linespace
     \vskip.5\baselineskip
-    \begin{centering}\itshape#1\par\end{centering}%
+    \begin{centering}\itshape\bfseries #1\par\end{centering}%
+    \nobreak\vskip.5\baselineskip
+}
+
+
+\def\subsubsection#1{%
+    %\linespace
+    \vskip.5\baselineskip
+    \begin{centering}\itshape #1\par\end{centering}%
     \nobreak\vskip.5\baselineskip
 }
 
@@ -120,3 +133,20 @@ includehead}
         \let\size@update\relax}%
   }
 \sloppy
+\def\indentpar#1#2#3{%
+    \@hangfrom{\hskip #1em\relax#2. }#3\par
+}
+%
+% Inserts a footnote that already has its number.
+\long\def\insfootnote#1{%
+    \insert\footins{%
+        \reset@font\footnotesize
+        \interlinepenalty\interfootnotelinepenalty
+        \splittopskip\footnotesep
+        \splitmaxdepth \dp\strutbox \floatingpenalty \@MM
+        \hsize\columnwidth \@parboxrestore
+        \color@begingroup
+            \rule\z@\footnotesep\ignorespaces#1\@finalstrut\strutbox
+        \color@endgroup
+    }%
+}

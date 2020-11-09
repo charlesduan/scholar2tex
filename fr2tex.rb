@@ -19,8 +19,9 @@
 # along with scholar2tex.  If not, see <http://www.gnu.org/licenses/>.
 
 require 'nokogiri'
-require 'open-uri'
+require 'shellwords'
 require 'json'
+require 'time'
 
 class CaseParser
 
@@ -56,11 +57,12 @@ class CaseParser
   end
 
   def process_entities(text)
-    text.gsub(/[_&$%]/, {
+    text.gsub(/[_&$%#]/, {
       '_' => "\\_",
       "&" => "\\&",
       "$" => "\\$",
       "%" => "\\%",
+      "#" => "\\#",
     }).gsub("\"") { |q|
       @in_quote = !@in_quote; @in_quote ? "``" : "\\null''"
     }.gsub("§", "\\textsection{}").gsub("", "{}---{}").gsub(
@@ -188,8 +190,30 @@ class CaseParser
       "\\section{#{process_text(elt)}}\n"
     elsif elt['SOURCE'] == 'HD2'
       "\\subsection{#{process_text(elt)}}\n"
+    elsif elt['SOURCE'] == 'HD3'
+      "\\subsubsection{#{process_text(elt)}}\n"
     else
       warn("Unknown HD source #{elt['SOURCE']}")
+    end
+  end
+
+  def process_elt_extract(elt)
+    process_text(elt)
+  end
+
+  def process_elt_fp(elt)
+    text = process_text(elt)
+    if text =~ /^(\w+)\. /
+      number, text = $1, $'
+      indent = case number
+               when /^[IVX]+$/ then 0
+               when /^[A-Z]$/ then 1
+               when /^\d+$/ then 2
+               when /^[a-z]$/ then 3
+               else 4 end
+      return "\\indentpar{#{indent}}{#{number}}{#{text}}\n\n"
+    else
+      return "#{text}\n\n"
     end
   end
 
@@ -224,34 +248,57 @@ class CaseParser
     " \\pagenum{#{elt['P']}}\\ifhmode\\expandafter\\xspace\\fi "
   end
 
+  def process_elt_su(elt)
+    "\\textsuperscript{#{process_text(elt)}}"
+  end
+
+  def process_elt_ftref(elt)
+    process_text(elt)
+  end
+
+  def process_elt_ftnt(elt)
+    "\\insfootnote{#{process_text(elt).strip}}\n\n"
+  end
+
+  def process_elt_gpotable(elt)
+    warn("GPOTABLE not supported")
+    "\\textbf{Tables not yet supported}\n\n"
+  end
+
+  def process_elt_fr(elt)
+    text = process_text(elt)
+    if text =~ /\//
+      "$\\frac{#$`}{#$'}$"
+    else
+      text
+    end
+  end
+
 end
 
 json = nil
-open(ARGV[0]) do |f|
-  json = JSON.parse(f.read)
-end
+json = JSON.parse(`curl #{ARGV[0].shellescape}`)
 
 STDERR.puts "URL is #{json["full_text_xml_url"]}"
 
-date = DateTime.parse(json['publication_date']).strftime("%B %-d, %Y")
+date = Time.parse(json['publication_date']).strftime("%B %-d, %Y")
 citation = "#{json['volume']} Fed. Reg. #{json['start_page']}"
-open(json["full_text_xml_url"]) do |f|
-  doc = Nokogiri::XML(f)
-  cp = CaseParser.new(doc)
+xml = `curl #{json["full_text_xml_url"].shellescape}`
+doc = Nokogiri::XML(xml)
+cp = CaseParser.new(doc)
 
-  puts "\\documentclass[twoside,11pt]{article}"
-  puts "\\usepackage{casemacs}"
-  puts ""
-  puts "\\citation{#{citation} (#{date})}"
-  puts "\\caption{DEF}"
-  puts "\\shortcaption{#{json['docket_ids'].join(", ")}}"
-  puts "\\docket{JKL}"
-  puts "\\court{MNO}"
-  puts ""
-  puts "\\begin{document}"
-  puts "\\thispagestyle{empty}"
-  puts "\\begin{center}\\bfseries #{json['type']}\\\\#{citation}\\\\#{date}"
-  puts "\\end{center}"
-  puts cp.text
-  puts "\\end{document}"
-end
+puts "\\documentclass[twoside,11pt]{article}"
+puts "\\usepackage{casemacs}"
+puts ""
+puts "\\citation{#{citation} (#{date})}"
+puts "\\caption{DEF}"
+puts "\\shortcaption{#{json['docket_ids'].join(", ")}}"
+puts "\\docket{JKL}"
+puts "\\court{MNO}"
+puts ""
+puts "\\begin{document}"
+puts "\\thispagestyle{empty}"
+puts "\\begin{center}\\bfseries #{json['type']}\\\\#{citation}\\\\#{date}"
+puts "\\end{center}"
+puts cp.text
+puts "\\end{document}"
