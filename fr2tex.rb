@@ -22,6 +22,7 @@ require 'nokogiri'
 require 'shellwords'
 require 'json'
 require 'time'
+require 'open-uri'
 
 class CaseParser
 
@@ -70,7 +71,15 @@ class CaseParser
     )
   end
 
+  def process_elt_rule(elt)
+    process_text(elt)
+  end
+
   def process_elt_prorule(elt)
+    process_text(elt)
+  end
+
+  def process_elt_effdate(elt)
     process_text(elt)
   end
 
@@ -164,6 +173,10 @@ class CaseParser
     "\n\n\\centerline{*\\qquad*\\qquad*}\n\n"
   end
 
+  def process_elt_regtext(elt)
+    process_text(elt)
+  end
+
   def process_elt_amdpar(elt)
     "\n\n\\amendmentpar " + process_text(elt) + "\n\n"
   end
@@ -222,10 +235,15 @@ class CaseParser
   end
 
   def process_elt_e(elt)
-    if elt['T'] == '03'
+    case elt['T']
+    when '02'
+      "\\textbf{\\small #{process_text(elt)}}"
+    when '03'
       "\\emph{#{process_text(elt)}}"
-    elsif elt['T'] == '04'
+    when '04'
       "\\textbf{#{process_text(elt)}}"
+    when '51', '52'
+      "\\textsubscript{#{process_text(elt)}}"
     else
       warn("Unknown E type #{elt['T']}")
       process_text(elt)
@@ -261,8 +279,73 @@ class CaseParser
   end
 
   def process_elt_gpotable(elt)
-    warn("GPOTABLE not supported")
-    "\\textbf{Tables not yet supported}\n\n"
+    ttl = elt.at_xpath("./TTITLE")
+    if ttl
+      ttl = "\\begin{quote}\n" + \
+        process_text(elt.at_xpath("./TTITLE")) + \
+        "\\end{quote}\n"
+    else
+      ttl = ""
+    end
+
+    return "\\begin{table}\n#{ttl}\\begin{center}\n" + \
+      "\\begin{tabular}{#{'l' * elt['COLS'].to_i}}\n" + \
+      process_gpotable_headers(elt.xpath('./BOXHD/CHED')) + \
+      process_gpotable_rows(elt.xpath('./ROW')) + \
+      "\\end{tabular}\n\\end{center}\n\\end{table}\n"
+  end
+
+  def process_gpotable_headers(headers)
+    # This method needs to deal with tables of multiple logical rows. The
+    # apparent GPO format is to use the "H" attribute to indicate which row a
+    # header is on, and for a given cell with "H" value $h$, the subsequent
+    # $h+1$ columns are all under that cell.
+    #
+    # header_rows is an array with one element per logical row of the table.
+    # Each row contains a number of elements corresponding to the cells in the
+    # TeX table. Each cell is either nil (empty) or a two-element array, the
+    # first element being the text of the cell and the second being the number
+    # of columns the cell spans.
+    header_rows = [ [] ]
+    cur_col = 0
+    headers.each do |ched|
+      ched_h = ched['H'].to_i
+      header_rows.push([ nil ] * cur_col) while header_rows.count < ched_h
+      header_rows[ched_h - 1].pop if header_rows[ched_h - 1].last.nil?
+      header_rows[ched_h - 1].push([ process_text(ched).strip, 0 ])
+      if ched_h > 1
+        (0 ... ched_h).each do |i|
+          header_rows[i].last[1] += 1
+        end
+      end
+      (ched_h ... header_rows.count).each do |i|
+        header_rows[i].push(nil)
+      end
+      cur_col += 1
+    end
+
+    return "\\hline\n" + header_rows.map { |row|
+      row.map { |val|
+        if val.nil? then ""
+        elsif val[1] <= 1 then "\\textbf{#{val[0]}}"
+        else "\\multicolumn{#{val[1]}}{l}{\\textbf{#{val[0]}}}"
+        end
+      }.join("&") + "\\\\\n"
+    }.join("") + "\\hline\n"
+  end
+
+  def process_gpotable_rows(rows)
+    return rows.map { |row|
+      row.xpath("./ENT").map { |ent| process_text(ent) }.join("&") + "\\\\\n"
+    }.join("") + "\\hline\n"
+  end
+
+  #
+  # This appears to be an element for a hard line break in a table cell.
+  # Currently I don't have a good way of dealing with multi-line texts in cells.
+  #
+  def process_elt_li(elt)
+    return process_text(elt)
   end
 
   def process_elt_fr(elt)
@@ -277,17 +360,23 @@ class CaseParser
 end
 
 json = nil
-json = JSON.parse(`curl #{ARGV[0].shellescape}`)
+begin
+  json = URI.open(ARGV[0]) do |io| JSON.parse(io.read) end
+rescue
+  STDERR.puts "You must provide the JSON link for the regulation"
+  exit 1
+end
 
 STDERR.puts "URL is #{json["full_text_xml_url"]}"
 
 date = Time.parse(json['publication_date']).strftime("%B %-d, %Y")
 citation = "#{json['volume']} Fed. Reg. #{json['start_page']}"
-xml = `curl #{json["full_text_xml_url"].shellescape}`
+xml = URI.open(json["full_text_xml_url"])
 doc = Nokogiri::XML(xml)
 cp = CaseParser.new(doc)
 
 puts "\\documentclass[twoside,11pt]{article}"
+puts "\\usepackage{fixltx2e}"
 puts "\\usepackage{casemacs}"
 puts ""
 puts "\\citation{#{citation} (#{date})}"
