@@ -292,7 +292,7 @@ URI.open(ARGV[0]) do |f|
   puts "\\usepackage{casemacs}"
   puts ""
   puts "\\citation{#{cp.citation}}"
-  puts "\\caption{#{cp.caption.gsub("\n", "\\\\\\\\\n")}}"
+  # puts "\\caption{#{cp.caption.gsub("\n", "\\\\\\\\\n")}}"
   puts "\\shortcaption{#{cp.shortcaption}}"
   puts "\\docket{#{cp.docket}}"
   puts "\\court{#{cp.court}}"
