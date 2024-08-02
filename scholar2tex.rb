@@ -140,7 +140,7 @@ class CaseParser
     text = process_text(elt)
 
     # Identifies concurrence and dissent markers
-    if text =~ /^#{JUDGE_RE}.*#{OPINING_RE}/
+    if elt.content =~ /^#{JUDGE_RE}.*#{OPINING_RE}/
       text = "\\vskip\\baselineskip\n\n\\textbf{#{text}}"
     end
 
@@ -303,7 +303,7 @@ if ARGV[0] == '-p'
   ARGV[0] = `pbpaste`
 end
 
-open(ARGV[0]) do |f|
+URI.open(ARGV[0]) do |f|
   doc = Nokogiri::HTML(f)
   cp = CaseParser.new(doc)
 
@@ -311,7 +311,7 @@ open(ARGV[0]) do |f|
   puts "\\usepackage{casemacs}"
   puts ""
   puts "\\citation{#{cp.citation}}"
-  puts "\\caption{#{cp.caption.gsub("\n", "\\\\\\\\\n")}}"
+  # puts "\\caption{#{cp.caption.gsub("\n", "\\\\\\\\\n")}}"
   puts "\\shortcaption{#{cp.shortcaption}}"
   puts "\\docket{#{cp.docket}}"
   puts "\\court{#{cp.court}}"
