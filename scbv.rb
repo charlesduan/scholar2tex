@@ -29,6 +29,9 @@ end
 
 class BoundVolume
 
+  USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:135.0) ' \
+      'Gecko/20100101 Firefox/135.0'
+
   def initialize(vol, page, file = nil)
     @vol = vol
     @page = page
@@ -48,10 +51,14 @@ class BoundVolume
       return @file
     end
 
-    url = "https://www.supremecourt.gov/opinions/boundvolumes/#{@vol}bv.pdf"
+    if @vol.to_i >= 561
+      url = "https://www.supremecourt.gov/opinions/boundvolumes/#{@vol}BV.pdf"
+    else
+      url = "https://www.supremecourt.gov/opinions/boundvolumes/#{@vol}bv.pdf"
+    end
     @file = Tempfile.new([ "vol", ".pdf" ])
     puts "Downloading #{url}"
-    open(url) do |f|
+    URI.open(url, 'User-Agent' => USER_AGENT) do |f|
       loop do
         str = f.read(4096)
         break unless str
