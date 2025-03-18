@@ -112,9 +112,22 @@ class CaseParser
       "$" => "\\$",
       "%" => "\\%",
       "#" => "\\#",
-    }).gsub("\"") { |q|
-      @in_quote = !@in_quote; @in_quote ? "``" : "\\null''"
-    }.gsub("§", "\\textsection{}").gsub("", "{}---{}").gsub(
+    }).gsub(/(.)?\"(.)?/) { |q|
+      @in_quote = !@in_quote
+      quote = @in_quote ? "``" : "''"
+      if ($1 == '`' || $1 == '\'') then quote = "\\,#{quote}" end
+      if ($2 == '`' || $2 == '\'') then quote = "#{quote}\\," end
+      "#$1#{quote}#$2"
+    }.gsub(/(§+)(.)/) { |match|
+      suffix = case $2
+               when " " then "~"
+               when "\w" then " #$2"
+               else $2
+               end
+      ("\\S" * $1.length) + suffix
+    }.gsub(
+      "", "---"
+    ).gsub(
       /(https?:\/\/[^ ]*)/, "\\url{\\1}"
     )
   end
@@ -127,7 +140,7 @@ class CaseParser
     text = process_text(elt)
 
     # Identifies concurrence and dissent markers
-    if text =~ /^#{JUDGE_RE}.*#{OPINING_RE}/
+    if elt.content =~ /^#{JUDGE_RE}.*#{OPINING_RE}/
       text = "\\vskip\\baselineskip\n\n\\textbf{#{text}}"
     end
 
@@ -135,7 +148,10 @@ class CaseParser
   end
 
   def process_elt_i(elt)
-    "\\textit{#{process_text(elt)}}"
+    t = process_text(elt)
+    suffix = ""
+    if t =~ /,?\s*\z/ then t, suffix, = $`, $& end
+    "\\textit{#{t}}#{suffix}"
   end
 
   def process_elt_h2(elt)
@@ -183,7 +199,10 @@ class CaseParser
     if elt['style'] == 'color:black;background-color:#ffc'
       process_text(elt)
     else
-      "\\textbf{#{process_text(elt)}}"
+      t = process_text(elt)
+      suffix = ""
+      if t =~ /,?\s*\z/ then t, suffix, = $`, $& end
+      "\\textbf{#{t}}#{suffix}"
     end
   end
 
@@ -284,7 +303,7 @@ if ARGV[0] == '-p'
   ARGV[0] = `pbpaste`
 end
 
-open(ARGV[0]) do |f|
+URI.open(ARGV[0]) do |f|
   doc = Nokogiri::HTML(f)
   cp = CaseParser.new(doc)
 
